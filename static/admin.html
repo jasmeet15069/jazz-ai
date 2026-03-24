@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JAZZ AI — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg0:#080a0d;--bg1:#0d1117;--bg2:#111820;--bg3:#1a2332;
+    --border:#1e2d42;--border2:#253548;
+    --green:#00ff88;--cyan:#00d4ff;--amber:#ffd700;--red:#ff4060;--purple:#b48eff;
+    --text:#c9d1d9;--muted:#5a7394;--muted2:#3d5470;
+    --mono:'JetBrains Mono',monospace;--head:'Rajdhani',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:var(--bg0);color:var(--text);font-family:var(--mono);}
+  body::before{content:'';position:fixed;inset:0;z-index:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.008) 2px,rgba(0,255,136,0.008) 4px);
+    pointer-events:none;}
+
+  /* Layout */
+  .app{position:relative;z-index:1;display:grid;grid-template-columns:220px 1fr;grid-template-rows:52px 1fr;height:100vh;overflow:hidden;}
+
+  /* Topbar */
+  .topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;
+    padding:0 20px;background:var(--bg1);border-bottom:1px solid var(--border);}
+  .topbar-left{display:flex;align-items:center;gap:16px;}
+  .logo{font-family:var(--head);font-size:20px;font-weight:700;color:#fff;}
+  .logo span{color:var(--green);}
+  .admin-badge{font-size:9px;letter-spacing:3px;color:var(--amber);
+    border:1px solid rgba(255,215,0,0.3);border-radius:3px;padding:2px 6px;text-transform:uppercase;}
+  .topbar-right{display:flex;gap:10px;align-items:center;}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);}
+  .status-txt{font-size:10px;color:var(--muted);}
+  .btn{padding:5px 12px;border-radius:4px;font-family:var(--mono);font-size:10px;letter-spacing:1px;
+    cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--muted);text-decoration:none;transition:all 0.2s;}
+  .btn:hover{border-color:var(--cyan);color:var(--cyan);}
+  .btn.red:hover{border-color:var(--red);color:var(--red);}
+
+  /* Sidebar */
+  .sidebar{background:var(--bg1);border-right:1px solid var(--border);overflow-y:auto;}
+  .nav-section{padding:16px 14px 6px;font-size:9px;letter-spacing:3px;color:var(--muted2);text-transform:uppercase;}
+  .nav-item{
+    display:flex;align-items:center;gap:10px;padding:8px 14px;
+    font-size:12px;color:var(--muted);cursor:pointer;border-left:2px solid transparent;
+    transition:all 0.15s;border-right:none;background:none;width:100%;text-align:left;
+  }
+  .nav-item:hover{background:var(--bg2);color:var(--text);border-left-color:var(--border2);}
+  .nav-item.active{background:var(--bg2);color:var(--green);border-left-color:var(--green);}
+  .nav-item .ni{font-size:14px;width:18px;}
+  .nav-item .badge{
+    margin-left:auto;padding:1px 6px;border-radius:10px;font-size:9px;
+    background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.2);
+  }
+
+  /* Main content */
+  .main{overflow-y:auto;padding:24px;}
+  .main::-webkit-scrollbar{width:4px;}
+  .main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+  /* Page title */
+  .page-title{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;
+  }
+  .page-title h1{font-family:var(--head);font-size:28px;font-weight:700;letter-spacing:1px;}
+  .page-title h1 span{color:var(--green);}
+  .refresh-btn{
+    padding:7px 14px;border-radius:5px;background:transparent;border:1px solid var(--border2);
+    color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.2s;
+  }
+  .refresh-btn:hover{border-color:var(--green);color:var(--green);}
+
+  /* Stats grid */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:28px;}
+  .stat-card{
+    background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+    padding:16px 18px;transition:border-color 0.2s;
+  }
+  .stat-card:hover{border-color:var(--border2);}
+  .stat-label{font-size:9px;letter-spacing:3px;color:var(--muted2);text-transform:uppercase;margin-bottom:8px;}
+  .stat-value{font-family:var(--head);font-size:36px;font-weight:700;line-height:1;margin-bottom:4px;}
+  .stat-value.green{color:var(--green);}
+  .stat-value.cyan{color:var(--cyan);}
+  .stat-value.amber{color:var(--amber);}
+  .stat-value.purple{color:var(--purple);}
+  .stat-sub{font-size:10px;color:var(--muted2);}
+
+  /* Section */
+  .section{background:var(--bg1);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;overflow:hidden;}
+  .section-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;border-bottom:1px solid var(--border);
+  }
+  .section-title{font-family:var(--head);font-size:16px;font-weight:700;letter-spacing:1px;color:#fff;}
+  .section-badge{
+    padding:3px 8px;border-radius:10px;font-size:9px;
+    background:var(--bg3);color:var(--muted);border:1px solid var(--border);
+  }
+
+  /* Table */
+  .data-table{width:100%;border-collapse:collapse;}
+  .data-table th{
+    padding:10px 16px;font-size:9px;letter-spacing:2px;color:var(--muted2);
+    text-align:left;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--bg2);
+  }
+  .data-table td{padding:10px 16px;font-size:12px;border-bottom:1px solid rgba(30,45,66,0.6);vertical-align:middle;}
+  .data-table tr:last-child td{border-bottom:none;}
+  .data-table tr:hover td{background:rgba(255,255,255,0.02);}
+  .data-table .truncate{max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* Badges */
+  .tier-badge{
+    display:inline-block;padding:2px 7px;border-radius:3px;font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  }
+  .tier-badge.free{background:rgba(90,115,148,0.2);color:var(--muted);border:1px solid var(--border);}
+  .tier-badge.pro{background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.3);}
+  .tier-badge.enterprise{background:rgba(255,215,0,0.1);color:var(--amber);border:1px solid rgba(255,215,0,0.3);}
+  .role-badge.admin{background:rgba(180,142,255,0.1);color:var(--purple);border:1px solid rgba(180,142,255,0.3);
+    display:inline-block;padding:2px 7px;border-radius:3px;font-size:9px;text-transform:uppercase;}
+  .role-badge.client{color:var(--muted2);font-size:10px;}
+
+  .action-btn{
+    padding:3px 8px;border-radius:3px;font-family:var(--mono);font-size:9px;letter-spacing:1px;
+    cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);
+    transition:all 0.15s;
+  }
+  .action-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+  .action-btn.danger:hover{border-color:var(--red);color:var(--red);}
+
+  /* Logs */
+  .log-container{
+    background:var(--bg0);padding:14px;font-size:11px;
+    max-height:340px;overflow-y:auto;
+    border-top:1px solid var(--border);
+  }
+  .log-container::-webkit-scrollbar{width:3px;}
+  .log-container::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+  .log-line{line-height:1.7;white-space:pre-wrap;word-break:break-all;}
+  .log-line.INFO{color:var(--text);}
+  .log-line.ERROR{color:var(--red);}
+  .log-line.WARNING{color:var(--amber);}
+
+  /* DB section */
+  .db-info{
+    padding:14px 18px;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+    border-bottom:1px solid var(--border);
+  }
+  .db-meta{font-size:11px;color:var(--muted);}
+  .db-meta strong{display:block;color:var(--cyan);font-size:13px;margin-top:3px;}
+
+  /* SQL console */
+  .sql-console{padding:14px 18px;}
+  .sql-input{
+    width:100%;background:var(--bg0);border:1px solid var(--border);border-radius:6px;
+    padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;
+    resize:vertical;outline:none;min-height:70px;
+    transition:border-color 0.2s;
+  }
+  .sql-input:focus{border-color:var(--green);}
+  .sql-run-btn{
+    margin-top:8px;padding:7px 18px;background:var(--green);color:#000;
+    border:none;border-radius:5px;font-family:var(--mono);font-size:11px;
+    font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s;
+  }
+  .sql-run-btn:hover{box-shadow:0 0 14px rgba(0,255,136,0.4);}
+  .sql-result{
+    margin-top:10px;background:var(--bg0);border:1px solid var(--border);border-radius:6px;
+    padding:10px;font-size:11px;max-height:200px;overflow:auto;
+    color:var(--text);display:none;
+  }
+  .sql-result.show{display:block;}
+
+  /* Spinner */
+  .spinner{
+    display:inline-block;width:12px;height:12px;
+    border:2px solid var(--border2);border-top-color:var(--green);
+    border-radius:50%;animation:spin 0.6s linear infinite;margin-left:6px;vertical-align:middle;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Page visibility */
+  .page{display:none;}
+  .page.active{display:block;}
+
+  /* Memory tags */
+  .mem-cat{
+    display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;
+    background:rgba(0,255,136,0.08);color:var(--green);border:1px solid rgba(0,255,136,0.2);
+    margin-right:4px;
+  }
+
+  .loading-row td{color:var(--muted2);text-align:center;padding:24px;font-size:11px;}
+
+  /* Sub nav styling */
+  @media(max-width:800px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo">J<span>A</span>ZZ <span style="color:var(--muted);font-size:12px;font-weight:300;margin-left:8px;">ADMIN</span></div>
+      <div class="admin-badge">ADMIN TERMINAL</div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="status-txt" id="statusTxt">connecting...</div>
+      <a class="btn" href="/chat">← CHAT</a>
+      <button class="btn red" onclick="logout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-section">Overview</div>
+    <button class="nav-item active" onclick="showPage('overview')"><span class="ni">📊</span>Dashboard</button>
+
+    <div class="nav-section">Data</div>
+    <button class="nav-item" onclick="showPage('users')"><span class="ni">👤</span>Users<span class="badge" id="nav-users">—</span></button>
+    <button class="nav-item" onclick="showPage('chatlogs')"><span class="ni">💬</span>Chat Logs</button>
+    <button class="nav-item" onclick="showPage('docs')"><span class="ni">📄</span>Documents</button>
+    <button class="nav-item" onclick="showPage('memories')"><span class="ni">🧠</span>Memories</button>
+
+    <div class="nav-section">System</div>
+    <button class="nav-item" onclick="showPage('database')"><span class="ni">🗄</span>SQLite DB</button>
+    <button class="nav-item" onclick="showPage('logs')"><span class="ni">📋</span>Server Logs</button>
+  </div>
+
+  <!-- Main content -->
+  <div class="main" id="mainContent">
+
+    <!-- ── Overview ─────────────────────────────────────────────────────── -->
+    <div class="page active" id="page-overview">
+      <div class="page-title">
+        <h1>DASH<span>BOARD</span></h1>
+        <button class="refresh-btn" onclick="loadOverview()">↺ Refresh</button>
+      </div>
+
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value green" id="st-users">—</div><div class="stat-sub">registered accounts</div></div>
+        <div class="stat-card"><div class="stat-label">Chats Today</div><div class="stat-value cyan" id="st-chats">—</div><div class="stat-sub">messages processed</div></div>
+        <div class="stat-card"><div class="stat-label">Documents</div><div class="stat-value amber" id="st-docs">—</div><div class="stat-sub">indexed in ChromaDB</div></div>
+        <div class="stat-card"><div class="stat-label">Memories</div><div class="stat-value purple" id="st-mems">—</div><div class="stat-sub">stored facts</div></div>
+        <div class="stat-card"><div class="stat-label">SQLite Tables</div><div class="stat-value green" id="st-tables">—</div><div class="stat-sub">local WAL database</div></div>
+        <div class="stat-card"><div class="stat-label">Uptime</div><div class="stat-value cyan" id="st-uptime" style="font-size:20px;padding-top:6px;">—</div><div class="stat-sub">server uptime</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">System Status</div>
+          <div class="section-badge" id="sysVersion">v4.2.0</div>
+        </div>
+        <div class="db-info" id="sysInfo">
+          <div class="db-meta">DB TYPE<strong id="sys-dbtype">—</strong></div>
+          <div class="db-meta">DB PATH<strong id="sys-dbpath" style="color:var(--green)">—</strong></div>
+          <div class="db-meta">LAST REINDEX<strong id="sys-reindex">—</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Users ─────────────────────────────────────────────────────────── -->
+    <div class="page" id="page-users">
+      <div class="page-title"><h1>USER<span>S</span></h1><button class="refresh-btn" onclick="loadUsers()">↺ Refresh</button></div>
+      <div class="section">
+        <table class="data-table">
+          <thead><tr><th>Email</th><th>Role</th><th>Subscription</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody id="usersBody"><tr class="loading-row"><td colspan="5">Loading...<span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Chat Logs ──────────────────────────────────────────────────────── -->
+    <div class="page" id="page-chatlogs">
+      <div class="page-title"><h1>CHAT <span>LOGS</span></h1><button class="refresh-btn" onclick="loadChatLogs()">↺ Refresh</button></div>
+      <div class="section">
+        <table class="data-table">
+          <thead><tr><th>User</th><th>Message</th><th>Agent</th><th>Model</th><th>Time (ms)</th><th>Date</th></tr></thead>
+          <tbody id="chatBody"><tr class="loading-row"><td colspan="6">Loading...<span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Documents ─────────────────────────────────────────────────────── -->
+    <div class="page" id="page-docs">
+      <div class="page-title"><h1>DOCU<span>MENTS</span></h1><button class="refresh-btn" onclick="loadDocs()">↺ Refresh</button></div>
+      <div class="section">
+        <table class="data-table">
+          <thead><tr><th>Filename</th><th>User</th><th>Type</th><th>Size</th><th>Chunks</th><th>Uploaded</th></tr></thead>
+          <tbody id="docsBody"><tr class="loading-row"><td colspan="6">Loading...<span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Memories ───────────────────────────────────────────────────────── -->
+    <div class="page" id="page-memories">
+      <div class="page-title"><h1>MEMO<span>RIES</span></h1><button class="refresh-btn" onclick="loadMemories()">↺ Refresh</button></div>
+      <div class="section">
+        <table class="data-table">
+          <thead><tr><th>Category</th><th>Content</th><th>User</th><th>Source</th><th>Created</th></tr></thead>
+          <tbody id="memsBody"><tr class="loading-row"><td colspan="5">Loading...<span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── SQLite DB ──────────────────────────────────────────────────────── -->
+    <div class="page" id="page-database">
+      <div class="page-title"><h1>SQLITE <span>DB</span></h1>
+        <button class="refresh-btn" onclick="reindexSchema()">↺ Reindex Schema</button>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="stat-card"><div class="stat-label">DB Type</div><div class="stat-value cyan" style="font-size:18px;padding-top:6px;">SQLite</div><div class="stat-sub">WAL mode enabled</div></div>
+        <div class="stat-card"><div class="stat-label">Tables</div><div class="stat-value green" id="db-tables">—</div><div class="stat-sub">user tables</div></div>
+        <div class="stat-card"><div class="stat-label">Last Reindex</div><div class="stat-value amber" style="font-size:14px;padding-top:6px;" id="db-reindex">—</div><div class="stat-sub">schema cached</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title">Tables</div><div class="section-badge" id="dbBadge">local</div></div>
+        <div style="padding:8px 0;">
+          <table class="data-table">
+            <thead><tr><th>Table</th><th>Columns</th><th>Rows</th><th>Actions</th></tr></thead>
+            <tbody id="dbTablesBody"><tr class="loading-row"><td colspan="4">Loading...<span class="spinner"></span></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title">Raw SQL Console</div><div class="section-badge">SELECT only</div></div>
+        <div class="sql-console">
+          <textarea class="sql-input" id="sqlInput" placeholder="SELECT * FROM api_metrics LIMIT 20;"></textarea>
+          <button class="sql-run-btn" onclick="runSQL()">▶ RUN QUERY</button>
+          <div class="sql-result" id="sqlResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Server Logs ────────────────────────────────────────────────────── -->
+    <div class="page" id="page-logs">
+      <div class="page-title"><h1>SERVER <span>LOGS</span></h1><button class="refresh-btn" onclick="loadLogs()">↺ Refresh</button></div>
+      <div class="section">
+        <div class="section-header"><div class="section-title">Live Log Tail (last 200 lines)</div><div class="section-badge">jazz.log</div></div>
+        <div class="log-container" id="logContainer">Loading...</div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+const API = window.location.origin;
+let token = localStorage.getItem('jazz_token');
+let user  = JSON.parse(localStorage.getItem('jazz_user') || '{}');
+
+function boot() {
+  if (!token) return window.location.href = '/';
+  if (user.role !== 'admin') return window.location.href = '/chat';
+  loadOverview();
+  loadStatus();
+}
+
+function authFetch(path, opts={}) {
+  opts.headers = {...(opts.headers||{}), 'Authorization': `Bearer ${token}`};
+  return fetch(API + path, opts);
+}
+
+function logout() {
+  localStorage.removeItem('jazz_token');
+  localStorage.removeItem('jazz_user');
+  window.location.href = '/';
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  const loaders = {
+    users: loadUsers, chatlogs: loadChatLogs, docs: loadDocs,
+    memories: loadMemories, database: loadDB, logs: loadLogs
+  };
+  if (loaders[name]) loaders[name]();
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const r = await fetch(API + '/health');
+    const d = await r.json();
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusTxt');
+    if (d.status === 'healthy') {
+      dot.style.background = 'var(--green)';
+      dot.style.boxShadow  = '0 0 8px var(--green)';
+      txt.textContent = 'healthy';
+    } else {
+      dot.style.background = 'var(--amber)';
+      txt.textContent = d.status;
+    }
+  } catch {
+    document.getElementById('statusTxt').textContent = 'offline';
+    document.getElementById('statusDot').style.background = 'var(--red)';
+  }
+}
+
+// ── Overview ──────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const r = await authFetch('/admin/stats');
+    const d = await r.json();
+    document.getElementById('st-users').textContent  = d.total_users;
+    document.getElementById('st-chats').textContent  = d.chats_today;
+    document.getElementById('st-docs').textContent   = d.total_documents;
+    document.getElementById('st-mems').textContent   = d.total_memories;
+    document.getElementById('st-tables').textContent = d.sqlite_tables ?? d.mysql_tables ?? '—';
+    document.getElementById('nav-users').textContent = d.total_users;
+
+    const upSec = parseInt((new Date() - new Date(d.uptime_since)) / 1000);
+    const h = Math.floor(upSec/3600), m = Math.floor((upSec%3600)/60);
+    document.getElementById('st-uptime').textContent = `${h}h ${m}m`;
+
+    document.getElementById('sys-dbtype').textContent  = d.db_type || 'SQLite WAL';
+    document.getElementById('sys-dbpath').textContent  = d.db_path || './jazz_local.db';
+    document.getElementById('sys-reindex').textContent = d.last_schema_reindex ? new Date(d.last_schema_reindex).toLocaleTimeString() : 'never';
+    document.getElementById('sysVersion').textContent  = 'v' + d.version;
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const body = document.getElementById('usersBody');
+  body.innerHTML = '<tr class="loading-row"><td colspan="5">Loading...<span class="spinner"></span></td></tr>';
+  try {
+    const r = await authFetch('/admin/users');
+    const d = await r.json();
+    if (!d.users?.length) { body.innerHTML = '<tr class="loading-row"><td colspan="5">No users found</td></tr>'; return; }
+    body.innerHTML = d.users.map(u => `
+      <tr>
+        <td>${escHtml(u.email || '')}</td>
+        <td><span class="role-badge ${u.role}">${u.role || 'client'}</span></td>
+        <td><span class="tier-badge ${u.subscription || 'free'}">${u.subscription || 'free'}</span></td>
+        <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="action-btn" onclick="setTier('${u.id}','pro')">→ PRO</button>
+          <button class="action-btn danger" onclick="deleteUser('${u.id}','${escHtml(u.email||'')}')">DEL</button>
+        </td>
+      </tr>`).join('');
+  } catch(e) {
+    body.innerHTML = `<tr class="loading-row"><td colspan="5" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function setTier(userId, tier) {
+  if (!confirm(`Set user ${userId} to ${tier}?`)) return;
+  await authFetch('/admin/subscription', {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({user_id: userId, tier})
+  });
+  loadUsers();
+}
+
+async function deleteUser(userId, email) {
+  if (!confirm(`Delete user ${email}? This is irreversible.`)) return;
+  await authFetch(`/admin/user/${userId}`, {method:'DELETE'});
+  loadUsers();
+}
+
+// ── Chat Logs ─────────────────────────────────────────────────────────────────
+async function loadChatLogs() {
+  const body = document.getElementById('chatBody');
+  body.innerHTML = '<tr class="loading-row"><td colspan="6">Loading...<span class="spinner"></span></td></tr>';
+  try {
+    const r = await authFetch('/admin/chat-logs?limit=100');
+    const d = await r.json();
+    if (!d.logs?.length) { body.innerHTML = '<tr class="loading-row"><td colspan="6">No logs yet</td></tr>'; return; }
+    body.innerHTML = d.logs.map(l => `
+      <tr>
+        <td style="font-size:10px;color:var(--muted)">${escHtml((l.profiles?.email || l.user_id || '').substring(0,20))}</td>
+        <td class="truncate">${escHtml(l.message || '')}</td>
+        <td><span style="color:var(--cyan);font-size:10px">${l.agent_used || '—'}</span></td>
+        <td style="font-size:10px">${l.model_used || '—'}</td>
+        <td style="color:var(--green)">${l.response_time_ms || 0}ms</td>
+        <td style="font-size:10px;color:var(--muted)">${l.created_at ? new Date(l.created_at).toLocaleString() : '—'}</td>
+      </tr>`).join('');
+  } catch(e) {
+    body.innerHTML = `<tr class="loading-row"><td colspan="6" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+async function loadDocs() {
+  const body = document.getElementById('docsBody');
+  body.innerHTML = '<tr class="loading-row"><td colspan="6">Loading...<span class="spinner"></span></td></tr>';
+  try {
+    const r = await authFetch('/admin/documents');
+    const d = await r.json();
+    if (!d.documents?.length) { body.innerHTML = '<tr class="loading-row"><td colspan="6">No documents</td></tr>'; return; }
+    body.innerHTML = d.documents.map(doc => `
+      <tr>
+        <td>${escHtml(doc.original_name || doc.filename || '—')}</td>
+        <td style="font-size:10px;color:var(--muted)">${escHtml((doc.profiles?.email || doc.user_id || '').substring(0,22))}</td>
+        <td style="font-size:10px">${doc.file_type || '—'}</td>
+        <td>${formatBytes(doc.file_size||0)}</td>
+        <td style="color:var(--green)">${doc.chunk_count || 0}</td>
+        <td style="font-size:10px;color:var(--muted)">${doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString() : '—'}</td>
+      </tr>`).join('');
+  } catch(e) {
+    body.innerHTML = `<tr class="loading-row"><td colspan="6" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Memories ──────────────────────────────────────────────────────────────────
+async function loadMemories() {
+  const body = document.getElementById('memsBody');
+  body.innerHTML = '<tr class="loading-row"><td colspan="5">Loading...<span class="spinner"></span></td></tr>';
+  try {
+    const r = await authFetch('/admin/memories');
+    const d = await r.json();
+    if (!d.memories?.length) { body.innerHTML = '<tr class="loading-row"><td colspan="5">No memories</td></tr>'; return; }
+    body.innerHTML = d.memories.map(m => `
+      <tr>
+        <td><span class="mem-cat">${m.category || 'general'}</span></td>
+        <td class="truncate">${escHtml(m.content || '')}</td>
+        <td style="font-size:10px;color:var(--muted)">${escHtml((m.profiles?.email || m.user_id || '').substring(0,22))}</td>
+        <td style="font-size:10px;color:${m.source==='auto'?'var(--cyan)':'var(--green)'};">${m.source || 'manual'}</td>
+        <td style="font-size:10px;color:var(--muted)">${m.created_at ? new Date(m.created_at).toLocaleString() : '—'}</td>
+      </tr>`).join('');
+  } catch(e) {
+    body.innerHTML = `<tr class="loading-row"><td colspan="5" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Database ──────────────────────────────────────────────────────────────────
+async function loadDB() {
+  const body = document.getElementById('dbTablesBody');
+  body.innerHTML = '<tr class="loading-row"><td colspan="4">Loading...<span class="spinner"></span></td></tr>';
+  try {
+    const r = await authFetch('/mysql/tables');
+    const d = await r.json();
+    document.getElementById('db-tables').textContent = d.tables?.length || 0;
+    document.getElementById('dbBadge').textContent = d.db_type || 'SQLite';
+
+    if (!d.tables?.length) { body.innerHTML = '<tr class="loading-row"><td colspan="4">No tables found</td></tr>'; return; }
+
+    body.innerHTML = '<tr class="loading-row"><td colspan="4">Loading schema...<span class="spinner"></span></td></tr>';
+    const rows = await Promise.all(d.tables.map(async tbl => {
+      try {
+        const sr = await authFetch(`/mysql/schema/${tbl}`);
+        const sd = await sr.json();
+        return {name: tbl, cols: sd.columns?.length || 0, rows: sd.row_count || 0};
+      } catch { return {name: tbl, cols: '?', rows: '?'}; }
+    }));
+
+    body.innerHTML = rows.map(t => `
+      <tr>
+        <td style="color:var(--green);font-weight:500">${escHtml(t.name)}</td>
+        <td style="color:var(--muted)">${t.cols} columns</td>
+        <td style="color:var(--cyan)">${t.rows.toLocaleString()} rows</td>
+        <td>
+          <button class="action-btn" onclick="previewTable('${escHtml(t.name)}')">PREVIEW</button>
+          <button class="action-btn" onclick="document.getElementById('sqlInput').value='SELECT * FROM ${escHtml(t.name)} LIMIT 20;'">→ SQL</button>
+        </td>
+      </tr>`).join('');
+
+    // Reindex stats
+    const sr = await authFetch('/admin/stats');
+    const sd = await sr.json();
+    document.getElementById('db-reindex').textContent = sd.last_schema_reindex
+      ? new Date(sd.last_schema_reindex).toLocaleTimeString() : 'never';
+  } catch(e) {
+    body.innerHTML = `<tr class="loading-row"><td colspan="4" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function previewTable(tbl) {
+  document.getElementById('sqlInput').value = `SELECT * FROM ${tbl} LIMIT 20;`;
+  runSQL();
+}
+
+async function reindexSchema() {
+  const btn = event.target;
+  btn.textContent = '↺ Reindexing...';
+  btn.disabled = true;
+  try {
+    const r = await authFetch('/mysql/reindex', {method:'POST'});
+    const d = await r.json();
+    btn.textContent = '↺ Reindexed ✓';
+    setTimeout(() => { btn.textContent = '↺ Reindex Schema'; btn.disabled = false; }, 2000);
+    loadDB();
+  } catch(e) {
+    btn.textContent = 'Error!';
+    setTimeout(() => { btn.textContent = '↺ Reindex Schema'; btn.disabled = false; }, 2000);
+  }
+}
+
+async function runSQL() {
+  const sql = document.getElementById('sqlInput').value.trim();
+  if (!sql) return;
+  const result = document.getElementById('sqlResult');
+  result.className = 'sql-result show';
+  result.textContent = 'Running...';
+  try {
+    const r = await authFetch('/mysql/raw', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({sql})
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.detail || 'Query failed');
+    result.innerHTML = `<span style="color:var(--green)">${d.row_count} rows returned</span><pre style="margin-top:8px;white-space:pre-wrap;color:var(--text)">${escHtml(JSON.stringify(d.results, null, 2))}</pre>`;
+  } catch(e) {
+    result.innerHTML = `<span style="color:var(--red)">Error: ${escHtml(e.message)}</span>`;
+  }
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────────
+async function loadLogs() {
+  const container = document.getElementById('logContainer');
+  container.innerHTML = 'Loading...';
+  try {
+    const r = await authFetch('/logs');
+    const d = await r.json();
+    container.innerHTML = d.logs.map(line => {
+      const level = line.includes('[ERROR]') ? 'ERROR' : line.includes('[WARNING]') ? 'WARNING' : 'INFO';
+      const colored = line
+        .replace(/\[INFO\]/g, '<span style="color:var(--cyan)">[INFO]</span>')
+        .replace(/\[ERROR\]/g, '<span style="color:var(--red)">[ERROR]</span>')
+        .replace(/\[WARNING\]/g, '<span style="color:var(--amber)">[WARNING]</span>')
+        .replace(/✅/g, '<span style="color:var(--green)">✅</span>')
+        .replace(/❌/g, '<span style="color:var(--red)">❌</span>');
+      return `<div class="log-line ${level}">${colored}</div>`;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  } catch(e) {
+    container.innerHTML = `<span style="color:var(--red)">Failed to load logs: ${e.message}</span>`;
+  }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatBytes(b) {
+  if (b < 1024) return b + 'B';
+  if (b < 1048576) return (b/1024).toFixed(1) + 'KB';
+  return (b/1048576).toFixed(1) + 'MB';
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JAZZ Uncensored AI — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg0:       #080a0d;
+    --bg1:       #0d1117;
+    --bg2:       #111820;
+    --bg3:       #1a2332;
+    --border:    #1e2d42;
+    --green:     #00ff88;
+    --green-dim: #00c864;
+    --cyan:      #00d4ff;
+    --amber:     #ffd700;
+    --red:       #ff4060;
+    --text:      #c9d1d9;
+    --muted:     #5a7394;
+    --mono:      'JetBrains Mono', monospace;
+    --head:      'Rajdhani', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg0);
+    color: var(--text);
+    font-family: var(--mono);
+    overflow: hidden;
+  }
+
+  /* ── Grid scanlines ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.015) 2px, rgba(0,255,136,0.015) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,212,255,0.012) 40px, rgba(0,212,255,0.012) 41px);
+    pointer-events: none;
+  }
+
+  /* ── Animated ambient glow ── */
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.12;
+    animation: drift 12s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .glow-orb.a { width:500px; height:500px; background:var(--green); top:-100px; left:-100px; animation-delay:0s; }
+  .glow-orb.b { width:400px; height:400px; background:var(--cyan);  bottom:-100px; right:-100px; animation-delay:6s; }
+  .glow-orb.c { width:300px; height:300px; background:var(--amber); top:50%; left:50%; transform:translate(-50%,-50%); animation-delay:3s; opacity:0.05; }
+
+  @keyframes drift {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%      { transform: translate(30px,-20px) scale(1.05); }
+  }
+
+  /* ── Layout ── */
+  .layout {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    height: 100vh;
+  }
+
+  /* ── Left panel — branding ── */
+  .brand-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 80px;
+    border-right: 1px solid var(--border);
+  }
+
+  .brand-tag {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-tag::before {
+    content: '';
+    width: 24px; height: 1px;
+    background: var(--green);
+    display: block;
+  }
+
+  .brand-logo {
+    font-family: var(--head);
+    font-size: 88px;
+    font-weight: 700;
+    line-height: 0.9;
+    letter-spacing: -2px;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .brand-logo span { color: var(--green); }
+
+  .brand-subtitle {
+    font-family: var(--head);
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+
+  .feature-list { display: flex; flex-direction: column; gap: 12px; }
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .feature-item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+    box-shadow: 0 0 8px var(--green);
+  }
+  .feature-item.cyan .dot { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .feature-item.amber .dot { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+  .terminal-ticker {
+    margin-top: 40px;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+  .ticker-line {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 4px;
+    opacity: 0;
+    animation: fadeIn 0.4s forwards;
+  }
+  .ticker-line:nth-child(1) { animation-delay: 0.5s; }
+  .ticker-line:nth-child(2) { animation-delay: 1.0s; }
+  .ticker-line:nth-child(3) { animation-delay: 1.5s; }
+  .ticker-line:nth-child(4) { animation-delay: 2.0s; }
+  @keyframes fadeIn { to { opacity: 1; } }
+  .tk-time { color: var(--green); }
+  .tk-label { color: var(--cyan); }
+  .tk-ok { color: var(--green); margin-left: auto; }
+
+  /* ── Right panel — auth form ── */
+  .auth-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 48px;
+    background: var(--bg1);
+  }
+
+  .auth-title {
+    font-family: var(--head);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .auth-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 36px;
+  }
+
+  /* Tab switcher */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--green);
+    color: #000;
+    font-weight: 700;
+  }
+  .tab-btn:not(.active):hover { background: var(--bg3); color: var(--text); }
+
+  /* Input group */
+  .form-group { margin-bottom: 20px; }
+  .form-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .form-input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(0,255,136,0.1);
+  }
+  .form-input::placeholder { color: var(--muted); opacity: 0.5; }
+
+  /* Error/success */
+  .alert {
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .alert.error   { background: rgba(255,64,96,0.12); border: 1px solid rgba(255,64,96,0.3); color: var(--red); }
+  .alert.success { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+  .alert.show { display: block; }
+
+  /* Submit button */
+  .btn-submit {
+    width: 100%;
+    padding: 13px;
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-submit:hover { background: #00ffaa; box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-submit.loading::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+    animation: shimmer 1s infinite;
+  }
+  @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+  .divider {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin: 20px 0;
+    position: relative;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    position: absolute; top: 50%;
+    width: 40%; height: 1px;
+    background: var(--border);
+  }
+  .divider::before { left: 0; }
+  .divider::after  { right: 0; }
+
+  .version-badge {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--border);
+    letter-spacing: 1px;
+  }
+  .version-badge span { color: var(--green); }
+
+  /* Panel visibility */
+  .form-panel { display: none; }
+  .form-panel.active { display: block; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .brand-panel { display: none; }
+    .auth-panel { padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-orb a"></div>
+<div class="glow-orb b"></div>
+<div class="glow-orb c"></div>
+
+<div class="layout">
+  <!-- Left: branding -->
+  <div class="brand-panel">
+    <div class="brand-tag">Uncensored Intelligence</div>
+    <div class="brand-logo">J<span>A</span>ZZ</div>
+    <div class="brand-subtitle">AI Platform v4.2</div>
+
+    <div class="feature-list">
+      <div class="feature-item"><span class="dot"></span> Multi-agent routing — coding, research, vision, data</div>
+      <div class="feature-item"><span class="dot"></span> Groq Llama 3.3 70B + Dolphin Mistral 24B</div>
+      <div class="feature-item cyan"><span class="dot"></span> RAG with ChromaDB vector search</div>
+      <div class="feature-item cyan"><span class="dot"></span> Qwen2.5-VL image analysis pipeline</div>
+      <div class="feature-item amber"><span class="dot"></span> Local SQLite — zero network latency</div>
+      <div class="feature-item amber"><span class="dot"></span> Persistent memory extraction &amp; NL→SQL</div>
+    </div>
+
+    <div class="terminal-ticker">
+      <div class="ticker-line"><span class="tk-time">[boot]</span><span class="tk-label">SQLITE_WAL</span><span class="tk-ok">✅ ready</span></div>
+      <div class="ticker-line"><span class="tk-time">[boot]</span><span class="tk-label">CHROMADB</span><span class="tk-ok">✅ ready</span></div>
+      <div class="ticker-line"><span class="tk-time">[boot]</span><span class="tk-label">GROQ_API</span><span class="tk-ok">✅ ready</span></div>
+      <div class="ticker-line"><span class="tk-time">[boot]</span><span class="tk-label">SUPABASE</span><span class="tk-ok">✅ ready</span></div>
+    </div>
+  </div>
+
+  <!-- Right: auth -->
+  <div class="auth-panel">
+    <div class="auth-title">ACCESS TERMINAL</div>
+    <div class="auth-subtitle">Authenticate to enter JAZZ AI</div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('login')">LOGIN</button>
+      <button class="tab-btn" onclick="switchTab('signup')">REGISTER</button>
+    </div>
+
+    <div id="alertBox" class="alert"></div>
+
+    <!-- Login form -->
+    <div id="loginPanel" class="form-panel active">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input id="loginEmail" type="email" class="form-input" placeholder="user@domain.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input id="loginPassword" type="password" class="form-input" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <button class="btn-submit" id="loginBtn" onclick="doLogin()">AUTHENTICATE →</button>
+    </div>
+
+    <!-- Signup form -->
+    <div id="signupPanel" class="form-panel">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input id="signupName" type="text" class="form-input" placeholder="Your name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input id="signupEmail" type="email" class="form-input" placeholder="user@domain.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password (min 8 chars)</label>
+        <input id="signupPassword" type="password" class="form-input" placeholder="••••••••" autocomplete="new-password"/>
+      </div>
+      <button class="btn-submit" id="signupBtn" onclick="doSignup()">CREATE ACCOUNT →</button>
+    </div>
+
+    <div class="divider">or</div>
+    <button class="btn-submit" style="background:var(--bg3);color:var(--cyan);border:1px solid var(--cyan);" onclick="demoLogin()">ADMIN DEMO LOGIN</button>
+
+    <div class="version-badge">JAZZ AI <span>v4.2.0</span> · SQLite WAL Edition · Oracle Ready</div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='signup')));
+  document.getElementById('loginPanel').classList.toggle('active', tab === 'login');
+  document.getElementById('signupPanel').classList.toggle('active', tab === 'signup');
+  hideAlert();
+}
+
+function showAlert(msg, type='error') {
+  const el = document.getElementById('alertBox');
+  el.textContent = msg;
+  el.className = `alert ${type} show`;
+}
+function hideAlert() {
+  document.getElementById('alertBox').className = 'alert';
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  if (!email || !pass) return showAlert('Please fill all fields');
+  setLoading('loginBtn', true);
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password: pass})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Login failed');
+    localStorage.setItem('jazz_token', d.access_token);
+    localStorage.setItem('jazz_user', JSON.stringify(d.user));
+    showAlert('Access granted. Redirecting...', 'success');
+    setTimeout(() => window.location.href = d.user.role === 'admin' ? '/admin-panel' : '/chat', 800);
+  } catch(e) {
+    showAlert(e.message);
+  } finally {
+    setLoading('loginBtn', false);
+  }
+}
+
+async function doSignup() {
+  const name  = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const pass  = document.getElementById('signupPassword').value;
+  if (!email || !pass) return showAlert('Email and password required');
+  if (pass.length < 8) return showAlert('Password must be at least 8 characters');
+  setLoading('signupBtn', true);
+  try {
+    const r = await fetch(`${API}/auth/signup`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password: pass, full_name: name})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Signup failed');
+    localStorage.setItem('jazz_token', d.access_token);
+    localStorage.setItem('jazz_user', JSON.stringify(d.user));
+    showAlert('Account created! Redirecting...', 'success');
+    setTimeout(() => window.location.href = '/chat', 800);
+  } catch(e) {
+    showAlert(e.message);
+  } finally {
+    setLoading('signupBtn', false);
+  }
+}
+
+function demoLogin() {
+  document.getElementById('loginEmail').value = 'jasmeet.15069@gmail.com';
+  document.getElementById('loginPassword').value = '';
+  switchTab('login');
+  showAlert('Fill in the admin password and click Authenticate', 'success');
+}
+
+// Enter key handling
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('loginPanel').classList.contains('active')) doLogin();
+    else doSignup();
+  }
+});
+
+// Redirect if already logged in
+if (localStorage.getItem('jazz_token')) {
+  const u = JSON.parse(localStorage.getItem('jazz_user') || '{}');
+  window.location.href = u.role === 'admin' ? '/admin-panel' : '/chat';
+}
+</script>
+</body>
+</html>
